@@ -6,7 +6,9 @@ model_params_pool = {"cnn": {"batch_size": [8],
                              "learning_rate": [0.01],
                              "num_epochs": [50],
                              "optimizer_type": ["adam"],
-                             "initializer_type": ["glorot"]}}
+                             "initializer_type": ["glorot"],
+                             "loss_type": ["l2"],
+                             "alpha": [0.01]}}
 
 
 class Config:
