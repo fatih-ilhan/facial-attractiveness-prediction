@@ -2,11 +2,11 @@ import tensorflow as tf
 
 
 class CNN:
-    def __init__(self, params):
+    def __init__(self, **params):
         # parse params
         self.initializer = params['initializer']
         self.optim = params['optimizer']
-        self.loss_fun = params['loss']
+        self.loss_fun = params['loss_function']
         self.alpha = params['alpha']
 
         # set filter, pool and dense shapes
@@ -22,11 +22,16 @@ class CNN:
         self.weights = self.init_weights(self.weight_shapes, 'weight')
 
     def fit(self, train_ds, eval_ds, num_epochs):
-
+        """
+        :param train_ds: :obj:tf.Dataset
+        :param eval_ds: :obj:tf.Dataset
+        :param num_epochs: int
+        :return: train_loss, eval_loss
+        """
+        print('Training starts...')
         train_loss = []
         eval_loss = []
         for epoch in range(num_epochs):
-
             # train loop
             running_train_loss = 0
             for count, (image, score) in enumerate(train_ds):
@@ -48,6 +53,9 @@ class CNN:
             train_loss.append(running_train_loss)
             eval_loss.append(running_eval_loss)
 
+        print('Training finished')
+        return train_loss, eval_loss
+
     @tf.function
     def train_step(self, images, scores):
         """
@@ -60,8 +68,8 @@ class CNN:
             loss = self.loss_fun(scores, predictions)
         grads = tape.gradient(loss, self.weights)
         self.optim.apply_gradients(zip(grads, self.weights))
-        mean_loss = tf.reduce_mean(loss)
-        return mean_loss.numpy()
+
+        return loss.numpy()
 
     @tf.function
     def eval_step(self, images, scores):
@@ -71,8 +79,8 @@ class CNN:
         """
         predictions = self.forward(images)
         loss = self.loss_fun(scores, predictions)
-        mean_loss = tf.reduce_mean(loss)
-        return mean_loss.numpy()
+
+        return loss.numpy()
 
     def forward(self, x):
         n, h, w, c = x.shape
