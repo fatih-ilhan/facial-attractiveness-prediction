@@ -1,86 +1,103 @@
-import sys
 import tensorflow as tf
 
-this = sys.modules[__name__]
 
-layers = [
-    ['conv2d', {'weights': [5, 5, 3, 16], 'stride_size': 3}],
-    ['leaky_relu', {'alpha': 0.2}],
-    ['maxpool', {'pool_size': 5, 'stride_size': 1}],
-    ['conv2d', {'weights': [5, 5, 16, 16], 'stride_size': 1}],
-    ['leaky_relu', {'alpha': 0.2}],
-    ['maxpool', {'pool_size': 5, 'stride_size': 1}],
-    ['conv2d', {'weights': [3, 3, 16, 32], 'stride_size': 1}],
-    ['leaky_relu', {'alpha': 0.2}],
-    ['maxpool', {'pool_size': 3, 'stride_size': 1}],
-    ['conv2d', {'weights': [3, 3, 32, 32], 'stride_size': 1}],
-    ['leaky_relu', {'alpha': 0.2}],
-    ['maxpool', {'pool_size': 3, 'stride_size': 1}],
-    ['flatten', {}],
-    ['dense', {'weights': [1152, 256]}],
-    ['dense', {'weights': [256, 1]}],
-    ['leaky_relu', {'alpha': 0.2}],
-]
+class CNN:
+    def __init__(self, params):
+        # parse params
+        self.initializer = params['initializer']
+        self.optim = params['optimizer']
+        self.loss_fun = params['loss']
+        self.alpha = params['alpha']
+
+        # set filter, pool and dense shapes
+        self.weight_shapes = [[5, 5, 3, 16],
+                              [5, 5, 16, 16],
+                              [3, 3, 16, 32],
+                              [3, 3, 32, 32],
+                              [1152, 256],
+                              [256, 1]]
+        self.pool_shapes = [5, 5, 3, 3]
+
+        # initialize weights according to initializer
+        self.weights = self.init_weights(self.weight_shapes, 'weight')
+
+    def fit(self, train_ds, eval_ds, num_epochs):
+
+        train_loss = []
+        eval_loss = []
+        for epoch in range(num_epochs):
+
+            # train loop
+            running_train_loss = 0
+            for count, (image, score) in enumerate(train_ds):
+                loss = self.train_step(image, score)
+                running_train_loss += loss
+            running_train_loss /= count
+
+            # eval loop
+            running_eval_loss = 0
+            for count, (image, score) in enumerate(eval_ds):
+                loss = self.eval_step(image, score)
+                running_eval_loss += loss
+            running_eval_loss /= count
+
+            message_str = "Epoch: {}, Train_loss: {:.2f}, Eval_loss: {:.2f}"
+            print(message_str.format(epoch, running_train_loss, running_eval_loss))
+
+            # save the losses
+            train_loss.append(running_train_loss)
+            eval_loss.append(running_eval_loss)
+
+    @tf.function
+    def train_step(self, images, scores):
+        """
+        :param images: (n, h, w, c)
+        :param scores: (n,)
+        :return loss
+        """
+        with tf.GradientTape() as tape:
+            predictions = self.forward(images)
+            loss = self.loss_fun(scores, predictions)
+        grads = tape.gradient(loss, self.weights)
+        self.optim.apply_gradients(zip(grads, self.weights))
+        mean_loss = tf.reduce_mean(loss)
+        return mean_loss.numpy()
+
+    @tf.function
+    def eval_step(self, images, scores):
+        """
+        :param images: (n, h, w, c)
+        :return: loss
+        """
+        predictions = self.forward(images)
+        loss = self.loss_fun(scores, predictions)
+        mean_loss = tf.reduce_mean(loss)
+        return mean_loss.numpy()
+
+    def forward(self, x):
+        n, h, w, c = x.shape
+        x = tf.cast(x, dtype=tf.float32)
+
+        for i in range(4):
+            x = tf.nn.conv2d(input=x, filters=self.weights[i], strides=3)
+            x = tf.nn.leaky_relu(features=x, alpha=self.alpha)
+            x = tf.nn.max_pool2d(input=x, ksize=self.pool_shapes[i], strides=1)
+
+        x = tf.reshape(x, shape=(n, -1))
+        x = tf.matmul(x, self.weights[4])
+        x = tf.matmul(x, self.weights[5])
+        x = tf.leaky_relu(x, alpha=self.alpha)
+
+        return x
+
+    def init_weights(self, in_shapes, in_name):
+        weights = []
+        for i, w_shape in enumerate(in_shapes):
+            weight = tf.Variable(initial_value=self.initializer(w_shape),
+                                 name='{}_{}'.format(in_name, i),
+                                 trainable=True,
+                                 dtype=tf.float32)
+            weights.append(weight)
+        return weights
 
 
-def relu(inputs):
-    return tf.nn.relu(inputs)
-
-
-def leaky_relu(inputs, alpha):
-    return tf.nn.leaky_relu(inputs, alpha=alpha)
-
-
-def conv2d(inputs, weights, stride_size):
-    return tf.nn.conv2d(inputs, weights, strides=[1, stride_size, stride_size, 1], padding='VALID')
-
-
-def maxpool(inputs, pool_size, stride_size):
-    return tf.nn.max_pool2d(inputs, ksize=[1, pool_size, pool_size, 1], padding='VALID',
-                            strides=[1, stride_size, stride_size, 1])
-
-
-def dense(inputs, weights):
-    return tf.matmul(inputs, weights)
-
-
-def dropout(inputs, rate):
-    return tf.nn.dropout(inputs, rate=rate)
-
-
-def flatten(inputs):
-    return tf.reshape(inputs, shape=(tf.shape(inputs)[0], -1))
-
-
-def get_weight(initializer, shape, name):
-    return tf.Variable(initializer(shape), name=name, trainable=True, dtype=tf.float32)
-
-
-def get_weights(initializer):
-    weights = []
-    for i, layer in enumerate(layers):
-        if 'weights' in layer[1].keys():
-            weights.append(get_weight(initializer, layer[1]['weights'], 'weight{}'.format(i)))
-    return weights
-
-
-def model(x, weights):
-    x = tf.cast(x, dtype=tf.float32)
-    j = 0
-    for layer in layers:
-        layer_type = layer[0]
-        layer_kwargs = layer[1]
-        method_to_call = getattr(this, layer_type)
-
-        if 'weights' in layer_kwargs.keys():
-            weight = weights[j]
-            j += 1
-            layer_kwargs['weights'] = weight
-
-        x = method_to_call(x, **layer_kwargs)
-
-    return x
-
-
-def loss(pred, target):
-    return tf.losses.mean_squared_error(target, pred)

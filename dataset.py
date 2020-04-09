@@ -1,3 +1,4 @@
+import os
 import scipy
 import numpy as np
 import tensorflow as tf
@@ -5,17 +6,24 @@ import matplotlib.pyplot as plt
 
 
 class ImageDataset:
-    def __init__(self, params):
+    def __init__(self, **params):
         # Parse args
         self.data_dir = params['data_dir']
         self.batch_size = params['batch_size']
         self.transform_flags = params['transform_flags']
 
-        # Create dataset
-        self.dataset = self.create_dataset()
+        # Create paths
+        self.train_path = os.path.join(self.data_dir, 'training')
+        self.val_path = os.path.join(self.data_dir, 'validation')
+        self.test_path = os.path.join(self.data_dir, 'test')
 
-    def create_dataset(self):
-        list_ds = tf.data.Dataset.list_files(self.data_dir + '/*.jpg')
+        # Create data-sets
+        self.train_ds = self.create_dataset(self.train_path)
+        self.val_ds = self.create_dataset(self.val_path)
+        self.test_ds = self.create_dataset(self.test_path)
+
+    def create_dataset(self, data_dir):
+        list_ds = tf.data.Dataset.list_files(data_dir + '/*.jpg')
         images_ds = list_ds.map(self.parse_image_file)
 
         transform_list = [
@@ -83,15 +91,11 @@ def show(image, label):
 
 
 if __name__ == '__main__':
-    params = {
-        'data_dir': 'data/training',
-        'batch_size': 4,
-        'transform_flags': [0, 0, 1, 0]
-    }
+    dataset_obj = ImageDataset(data_dir='data',
+                               batch_size=4,
+                               transform_flags=[0, 0, 1, 0])
 
-    dataset_obj = ImageDataset(params)
-
-    images_ds = dataset_obj.dataset
+    images_ds = dataset_obj.train_ds
 
     for img, scr in images_ds:
         print(img.shape, scr.shape)
