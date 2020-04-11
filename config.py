@@ -1,12 +1,18 @@
 import itertools
 from random import shuffle
 
-model_params_pool = {"cnn": {"batch_size": [8],
-                             "transform_flags": [[0, 0, 1, 0]],
-                             "learning_rate": [0.01],
-                             "num_epochs": [50],
-                             "optimizer_type": ["adam"],
-                             "initializer_type": ["glorot"]}}
+model_params_pool = {
+    "cnn": {
+        "batch_size": [8],
+        "transform_flags": [[0, 0, 1, 0]],
+        "learning_rate": [0.01],
+        "num_epochs": [50],
+        "optimizer_type": ["adam"],
+        "initializer_type": ["glorot"],
+        "loss_type": ['l1'],
+        "alpha": [0.2]
+    }
+}
 
 
 class Config:
