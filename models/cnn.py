@@ -10,7 +10,6 @@ class CNN:
         self.alpha = params['alpha']
 
         # set filter, pool and dense shapes
-
         self.filter_shapes = [[5, 5, 3, 16],
                               [5, 5, 16, 16],
                               [3, 3, 16, 32],

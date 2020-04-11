@@ -1,3 +1,5 @@
+import os
+import pickle as pkl
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from models.cnn import CNN
@@ -11,7 +13,13 @@ def loss_l1(y_true, y_pred, weights=None):
     return tf.reduce_mean(tf.abs(y_true - y_pred))
 
 
-def train(train_ds, val_ds, **params):
+def train(train_ds, val_ds, exp_count, **params):
+    results_dir = 'results_'
+    save_dir = os.path.join(results_dir, str(exp_count))
+
+    if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
+
     num_epochs = params["num_epochs"]
     learning_rate = params["learning_rate"]
     optimizer_type = params["optimizer_type"]
@@ -34,6 +42,19 @@ def train(train_ds, val_ds, **params):
 
     train_loss, eval_loss = model.fit(train_ds, val_ds, num_epochs)
 
+    # plot and save the loss curve
+    plot_loss_curve(train_loss, eval_loss, loss_type, save_dir)
+
+    save_dict = params
+    save_dict['train_loss'] = train_loss
+    save_dict['eval_loss'] = eval_loss
+    print('Saving...')
+    save_path = os.path.join(save_dir, 'config.pkl')
+    pkl.dump(save_dict, open(save_path, 'rb'))
+
+
+def plot_loss_curve(train_loss, eval_loss, loss_type, save_dir):
+    save_path = os.path.join(save_dir, 'loss_curve.png')
     plt.figure()
     plt.plot(range(len(train_loss)), train_loss, '-o')
     plt.plot(range(len(eval_loss)), eval_loss, '-o')
@@ -41,4 +62,4 @@ def train(train_ds, val_ds, **params):
     plt.xlabel('num_epoch')
     plt.ylabel('{} loss'.format(loss_type))
     plt.grid(True)
-    plt.show()
+    plt.savefig(save_path, dpi=400)

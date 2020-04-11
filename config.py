@@ -49,4 +49,5 @@ class Config:
         for i in range(len(all_lists)):
             params_list.append(dict(zip(keys, all_lists[i])))
         shuffle(params_list)
+
         return params_list
