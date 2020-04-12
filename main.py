@@ -1,5 +1,6 @@
 import os
 import pickle as pkl
+import tensorflow as tf
 
 from config import Config
 from dataset import ImageDataset
@@ -35,6 +36,8 @@ def main():
     model_name = 'cnn'
     data_folder = 'data'
     results_folder = 'results'
+    slot = 0
+    device = 'CPU'
 
     config_obj = Config(model_name)
 
@@ -42,18 +45,22 @@ def main():
     for exp_count, conf in enumerate(config_obj.conf_list):
         print('\nExperiment {}'.format(exp_count))
         print('-*-' * 10)
-        datasets = ImageDataset(data_dir=data_folder,
-                                batch_size=conf["batch_size"],
-                                transform_flags=conf['transform_flags'])
-        train(datasets.train_ds, datasets.val_ds, exp_count, **conf)
+        with tf.device('/' + device + ':' + str(slot)):
+            datasets = ImageDataset(data_dir=data_folder,
+                                    batch_size=conf["batch_size"],
+                                    transform_flags=conf['transform_flags'])
+
+            train(datasets.train_ds, datasets.val_ds, exp_count, **conf)
 
     best_model, best_conf = select_best_model(results_folder)
-    datasets = ImageDataset(data_dir=data_folder,
-                            batch_size=best_conf["batch_size"],
-                            transform_flags=best_conf['transform_flags'])
 
-    print("Testing with best model...")
-    test(best_model, datasets.test_ds)
+    with tf.device('/' + device + ':' + str(slot)):
+        datasets = ImageDataset(data_dir=data_folder,
+                                batch_size=best_conf["batch_size"],
+                                transform_flags=best_conf['transform_flags'])
+
+        print("Testing with best model...")
+        test(best_model, datasets.test_ds)
 
 
 if __name__ == '__main__':
