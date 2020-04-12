@@ -8,6 +8,7 @@ class CNN:
         self.optim = params['optimizer']
         self.loss_fun = params['loss_function']
         self.alpha = params['alpha']
+        # self.batch_reg = params['batch_reg']
         self.regularization = params['regularization']
         self.lmd = params['lambda']
 

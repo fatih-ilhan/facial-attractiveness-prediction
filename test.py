@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from train import loss_l1
 
 
-def test(model, test_ds, **params):
+def test(model, test_ds):
     model.loss_fun = loss_l1
     running_eval_loss = 0
     for count, (image, score) in enumerate(test_ds):

@@ -42,9 +42,11 @@ def train(train_ds, val_ds, exp_count, **params):
     save_dict['train_loss'] = train_loss
     save_dict['eval_loss'] = eval_loss
     print('Saving...')
-    save_path = os.path.join(save_dir, 'config.pkl')
-    with open(save_path, 'wb') as file:
-        pkl.dump(save_dict, file)
+    conf_save_path = os.path.join(save_dir, 'config.pkl')
+    model_save_path = os.path.join(save_dir, 'model.pkl')
+    for path, obj in zip([conf_save_path, model_save_path], [save_dict, model]):
+        with open(path, 'wb') as file:
+            pkl.dump(obj, file)
 
 
 def loss_l2(y_true, y_pred, weights=None):
