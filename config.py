@@ -4,7 +4,7 @@ from random import shuffle
 model_params_pool = {
     "cnn": {
         "batch_size": [32],
-        "transform_flags": [[0, 0, 1, 0], [0, 0, 0, 1]],
+        "transform_flags": [[0, 0, 1, 0], [0, 0, 0, 0]],
         "learning_rate": [0.0001],
         "num_epochs": [50],
         "optimizer_type": ["adam"],
