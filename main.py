@@ -1,3 +1,4 @@
+import argparse
 import os
 import pickle as pkl
 import tensorflow as tf
@@ -32,12 +33,10 @@ def select_best_model(results_dir):
     return best_model, best_conf
 
 
-def main():
+def main(device, slot):
     model_name = 'cnn'
     data_folder = 'data'
     results_folder = 'results'
-    slot = 0
-    device = 'CPU'
 
     config_obj = Config(model_name)
 
@@ -64,4 +63,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--device', type=str, default="CPU")  # device CPU/GPU
+    parser.add_argument('--slot', type=int, default=0)  # device slot
+
+    args = parser.parse_args()
+
+    main(args.device, args.slot)
