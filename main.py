@@ -8,6 +8,7 @@ from test import test
 
 
 def select_best_model(results_dir):
+    print("Selecting best model...")
     experiments = os.listdir(results_dir)
 
     best_model = None
@@ -16,7 +17,7 @@ def select_best_model(results_dir):
     for exp in experiments:
         exp_path = os.path.join(results_dir, exp)
         conf_path = os.path.join(exp_path, 'config.pkl')
-        model_path = os.path.join(results_dir, 'model.pkl')
+        model_path = os.path.join(exp_path, 'model.pkl')
 
         with open(conf_path, 'rb') as f:
             config = pkl.load(f)
@@ -51,7 +52,7 @@ def main():
                             batch_size=best_conf["batch_size"],
                             transform_flags=best_conf['transform_flags'])
 
-    print("Testing with best model")
+    print("Testing with best model...")
     test(best_model, datasets.test_ds)
 
 
