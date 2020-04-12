@@ -14,8 +14,8 @@ def loss_l1(y_true, y_pred, weights=None):
 
 
 def train(train_ds, val_ds, exp_count, **params):
-    results_dir = 'results_'
-    save_dir = os.path.join(results_dir, str(exp_count))
+    save_dir = 'experiment_' + str(exp_count)
+    save_dir = os.path.join('results', save_dir)
 
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)

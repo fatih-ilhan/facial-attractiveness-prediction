@@ -5,7 +5,7 @@ model_params_pool = {
     "cnn": {
         "batch_size": [8],
         "transform_flags": [[0, 0, 1, 0]],
-        "learning_rate": [0.01],
+        "learning_rate": [0.0001, 0.001],
         "num_epochs": [50],
         "optimizer_type": ["adam"],
         "initializer_type": ["glorot"],
@@ -23,7 +23,7 @@ class Config:
         self.experiment_params = {"evaluation_metric": ["mean_squared_error"],
                                   "scale_mode": "none",
                                   "online_flag": False,
-                                  "num_epochs": 100,
+                                  "num_epochs": 50,
                                   "early_stop_tolerance": 3,
                                   "train_val_test_ratio": [0.6, 0.2, 0.2]}
 
