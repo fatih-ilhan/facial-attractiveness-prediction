@@ -5,14 +5,6 @@ import matplotlib.pyplot as plt
 from models.cnn import CNN
 
 
-def loss_l2(y_true, y_pred, weights=None):
-    return tf.reduce_mean(tf.square(y_true - y_pred))
-
-
-def loss_l1(y_true, y_pred, weights=None):
-    return tf.reduce_mean(tf.abs(y_true - y_pred))
-
-
 def train(train_ds, val_ds, exp_count, **params):
     save_dir = 'experiment_' + str(exp_count)
     save_dir = os.path.join('results', save_dir)
@@ -50,7 +42,16 @@ def train(train_ds, val_ds, exp_count, **params):
     save_dict['eval_loss'] = eval_loss
     print('Saving...')
     save_path = os.path.join(save_dir, 'config.pkl')
-    pkl.dump(save_dict, open(save_path, 'rb'))
+    with open(save_path, 'wb') as file:
+        pkl.dump(save_dict, file)
+
+
+def loss_l2(y_true, y_pred, weights=None):
+    return tf.reduce_mean(tf.square(y_true - y_pred))
+
+
+def loss_l1(y_true, y_pred, weights=None):
+    return tf.reduce_mean(tf.abs(y_true - y_pred))
 
 
 def plot_loss_curve(train_loss, eval_loss, loss_type, save_dir):
