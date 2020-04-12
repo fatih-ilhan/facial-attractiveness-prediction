@@ -12,7 +12,7 @@ model_params_pool = {
         "loss_type": ['l1'],
         "alpha": [0.2],
         "regularization": [True],
-        "lambda": [0.01]
+        "lambda": [0.0001, 0.001]
     }
 }
 

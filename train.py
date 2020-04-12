@@ -21,7 +21,7 @@ def train(train_ds, val_ds, exp_count, **params):
 
     optimizer_dispatcher = {"adam": tf.optimizers.Adam}
     initializer_dispatcher = {"glorot": tf.initializers.glorot_uniform,
-                              "random": tf.initializers.random_normal_initializer}
+                              "random": tf.random_normal_initializer}
     loss_dispatcher = {"l2": loss_l2, "l1": loss_l1}
 
     optimizer = optimizer_dispatcher[optimizer_type](learning_rate)
