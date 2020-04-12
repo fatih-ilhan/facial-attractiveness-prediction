@@ -8,6 +8,8 @@ class CNN:
         self.optim = params['optimizer']
         self.loss_fun = params['loss_function']
         self.alpha = params['alpha']
+        self.regularization = params['regularization']
+        self.lmd = params['lambda']
 
         # set filter, pool and dense shapes
         self.filter_shapes = [[5, 5, 3, 16],
@@ -68,7 +70,11 @@ class CNN:
         """
         with tf.GradientTape() as tape:
             predictions = self.forward(images)
-            loss = self.loss_fun(scores, predictions)
+            if self.regularization:
+                loss = self.loss_fun(scores, predictions, self.lmd, self.weights)
+            else:
+                loss = self.loss_fun(scores, predictions, self.lmd, self.weights)
+
         grads = tape.gradient(loss, self.weights)
         self.optim.apply_gradients(zip(grads, self.weights))
 

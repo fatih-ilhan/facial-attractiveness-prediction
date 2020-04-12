@@ -17,10 +17,11 @@ def train(train_ds, val_ds, exp_count, **params):
     optimizer_type = params["optimizer_type"]
     initializer_type = params["initializer_type"]
     loss_type = params["loss_type"]
-    alpha = params["alpha"]
+
 
     optimizer_dispatcher = {"adam": tf.optimizers.Adam}
-    initializer_dispatcher = {"glorot": tf.initializers.glorot_uniform}
+    initializer_dispatcher = {"glorot": tf.initializers.glorot_uniform,
+                              "random": tf.initializers.random_normal_initializer}
     loss_dispatcher = {"l2": loss_l2, "l1": loss_l1}
 
     optimizer = optimizer_dispatcher[optimizer_type](learning_rate)
@@ -30,7 +31,7 @@ def train(train_ds, val_ds, exp_count, **params):
     model = CNN(initializer=initializer,
                 optimizer=optimizer,
                 loss_function=loss_fun,
-                alpha=alpha)
+                **params)
 
     train_loss, eval_loss = model.fit(train_ds, val_ds, num_epochs)
 
@@ -47,11 +48,19 @@ def train(train_ds, val_ds, exp_count, **params):
 
 
 def loss_l2(y_true, y_pred, weights=None):
-    return tf.reduce_mean(tf.square(y_true - y_pred))
+    loss = tf.reduce_mean(tf.square(y_true - y_pred))
+    return loss
 
 
-def loss_l1(y_true, y_pred, weights=None):
-    return tf.reduce_mean(tf.abs(y_true - y_pred))
+def loss_l1(y_true, y_pred, lmd=0, weights=None):
+    loss = tf.reduce_mean(tf.abs(y_true - y_pred))
+    if weights is not None:
+        # Calculate regularization term by finding norm of weights
+        reg_term = 0
+        for w in weights:
+            reg_term += tf.nn.l2_loss(w)
+        loss += reg_term * lmd
+    return loss
 
 
 def plot_loss_curve(train_loss, eval_loss, loss_type, save_dir):

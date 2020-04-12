@@ -8,9 +8,11 @@ model_params_pool = {
         "learning_rate": [0.0001, 0.001],
         "num_epochs": [50],
         "optimizer_type": ["adam"],
-        "initializer_type": ["glorot"],
+        "initializer_type": ["glorot", "random"],
         "loss_type": ['l1'],
-        "alpha": [0.2]
+        "alpha": [0.2],
+        "regularization": [True],
+        "lambda": [0.01]
     }
 }
 
