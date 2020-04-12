@@ -1,3 +1,6 @@
+import time
+from copy import deepcopy
+
 import tensorflow as tf
 
 
@@ -47,7 +50,7 @@ class CNN:
             self.weights += beta_list
             self.weights += gamma_list
 
-    def fit(self, train_ds, eval_ds, num_epochs):
+    def fit(self, train_ds, eval_ds, num_epochs, early_stop_tolerance):
         """
         :param train_ds: :obj:tf.Dataset
         :param eval_ds: :obj:tf.Dataset
@@ -57,8 +60,15 @@ class CNN:
         print('Training starts...')
         train_loss = []
         eval_loss = []
+
+        tolerance = 0
+        best_eval_loss = 1e6
+        best_dict = self.__dict__
+
         for epoch in range(num_epochs):
             # train loop
+            start_time = time.time()
+
             running_train_loss = 0
             for count, (image, score) in enumerate(train_ds):
                 loss = self.train_step(image, score)
@@ -72,11 +82,23 @@ class CNN:
                 running_eval_loss += loss.numpy()
             running_eval_loss /= count
 
-            message_str = "Epoch: {}, Train_loss: {:.2f}, Eval_loss: {:.2f}"
-            print(message_str.format(epoch, running_train_loss, running_eval_loss))
+            epoch_time = time.time() - start_time
+
+            message_str = "Epoch: {}, Train_loss: {:.2f}, Eval_loss: {:.2f}, Took {:.2f} seconds."
+            print(message_str.format(epoch, running_train_loss, running_eval_loss, epoch_time))
             # save the losses
             train_loss.append(running_train_loss)
             eval_loss.append(running_eval_loss)
+
+            if running_eval_loss < best_eval_loss:
+                best_eval_loss = running_eval_loss
+                best_dict = deepcopy(self.__dict__)  # brutal
+            else:
+                tolerance += 1
+
+            if tolerance > early_stop_tolerance:
+                self.__dict__ = best_dict
+                break
 
         print('Training finished')
         return train_loss, eval_loss

@@ -17,6 +17,7 @@ def train(train_ds, val_ds, exp_count, **params):
     optimizer_type = params["optimizer_type"]
     initializer_type = params["initializer_type"]
     loss_type = params["loss_type"]
+    early_stop_tolerance = params["early_stop_tolerance"]
 
     optimizer_dispatcher = {"adam": tf.optimizers.Adam}
     initializer_dispatcher = {"glorot": tf.initializers.glorot_uniform,
@@ -32,7 +33,7 @@ def train(train_ds, val_ds, exp_count, **params):
                 loss_function=loss_fun,
                 **params)
 
-    train_loss, eval_loss = model.fit(train_ds, val_ds, num_epochs)
+    train_loss, eval_loss = model.fit(train_ds, val_ds, num_epochs, early_stop_tolerance)
 
     # plot and save the loss curve
     plot_loss_curve(train_loss, eval_loss, loss_type, save_dir)

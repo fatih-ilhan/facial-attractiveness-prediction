@@ -3,7 +3,7 @@ from random import shuffle
 
 model_params_pool = {
     "cnn": {
-        "batch_size": [32],
+        "batch_size": [8],
         "transform_flags": [[0, 0, 0, 0]],
         "learning_rate": [0.0001],
         "num_epochs": [50],
@@ -14,6 +14,7 @@ model_params_pool = {
         "batch_reg": [True],
         "lambda": [0.0001],
         "dropout_rate": [0.2],
+        "early_stop_tolerance": [1]
     }
 }
 
@@ -23,12 +24,6 @@ class Config:
     This object contains manually given parameters
     """
     def __init__(self, model_name):
-        self.experiment_params = {"evaluation_metric": ["mean_squared_error"],
-                                  "scale_mode": "none",
-                                  "online_flag": False,
-                                  "num_epochs": 50,
-                                  "early_stop_tolerance": 3}
-
         self.model_name = model_name
         self.model_params = model_params_pool[self.model_name]
 
