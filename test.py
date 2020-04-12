@@ -13,7 +13,7 @@ def test(model, test_ds):
         running_eval_loss += loss.numpy()
     running_eval_loss /= count
 
-    print("Test l1 loss: {}".format(running_eval_loss))
+    print("Test l1 loss: {:.2f}".format(running_eval_loss))
 
 
 def test_sample(model, data_dir):

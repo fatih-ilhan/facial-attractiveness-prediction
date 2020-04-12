@@ -8,7 +8,8 @@ class CNN:
         self.optim = params['optimizer']
         self.loss_fun = params['loss_function']
         self.alpha = params['alpha']
-        # self.batch_reg = params['batch_reg']
+        self.batch_reg = params['batch_reg']
+
         self.regularization = params['regularization']
         self.lmd = params['lambda']
 
@@ -23,6 +24,17 @@ class CNN:
         self.cnn_strides = [3, 1, 1, 1]
         self.pool_strides = [1, 1, 1, 1]
         self.weight_shapes = self.filter_shapes + self.dense_shapes
+
+        # arrange batch-norm params
+        if self.batch_reg:
+            self.beta_list = []
+            self.gamma_list = []
+            for i in range(len(self.filter_shapes)):
+                beta = tf.constant(0.0, shape=[self.filter_shapes[i][-1]])
+                gamma = tf.constant(1.0, shape=[self.filter_shapes[i][-1]])
+                self.beta_list.append(tf.Variable(beta, trainable=True))
+                self.gamma_list.append(tf.Variable(gamma, trainable=True))
+            self.epsilon = 0.0001
 
         # initialize weights according to initializer
         self.weights = self.init_weights(self.weight_shapes, 'weight')
@@ -106,6 +118,13 @@ class CNN:
                                  ksize=self.pool_shapes[i],
                                  strides=self.pool_strides[i],
                                  padding='VALID')
+
+            if self.batch_reg:
+                mean, var = tf.nn.moments(x, [0, 1, 2])
+                x = tf.nn.batch_normalization(x, mean, var,
+                                              self.beta_list[i],
+                                              self.gamma_list[i],
+                                              self.epsilon)
 
         x = tf.reshape(x, shape=(n, -1))
         x = tf.matmul(x, self.weights[4])

@@ -4,13 +4,14 @@ from random import shuffle
 model_params_pool = {
     "cnn": {
         "batch_size": [32],
-        "transform_flags": [[0, 0, 1, 0]],
+        "transform_flags": [[0, 0, 1, 0], [0, 0, 0, 1]],
         "learning_rate": [0.0001],
         "num_epochs": [50],
         "optimizer_type": ["adam"],
         "initializer_type": ["glorot"],
         "loss_type": ['l1'],
         "alpha": [0.2],
+        "batch_reg": [True],
         "regularization": [True],
         "lambda": [0.0001]
     }
