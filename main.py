@@ -18,11 +18,13 @@ def select_best_model(results_dir):
         conf_path = os.path.join(exp_path, 'config.pkl')
         model_path = os.path.join(results_dir, 'model.pkl')
 
-        config = pkl.load(conf_path)
+        with open(conf_path, 'rb') as f:
+            config = pkl.load(f)
         eval_loss = config['eval_loss'][-1]
         if eval_loss < best_loss:
             best_loss = eval_loss
-            best_model = pkl.load(model_path)
+            with open(model_path, 'rb') as f:
+                best_model = pkl.load(f)
             best_conf = config
 
     return best_model, best_conf
