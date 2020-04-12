@@ -42,7 +42,7 @@ class ImageDataset:
 
     @staticmethod
     def parse_image_file(file_path):
-        file_name = tf.strings.split(file_path, '/')[-1]
+        file_name = tf.strings.split(file_path, os.sep)[-1]
         score_str = tf.strings.split(file_name, '_')[0]
         score = tf.strings.to_number(score_str)
 

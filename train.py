@@ -18,7 +18,6 @@ def train(train_ds, val_ds, exp_count, **params):
     initializer_type = params["initializer_type"]
     loss_type = params["loss_type"]
 
-
     optimizer_dispatcher = {"adam": tf.optimizers.Adam}
     initializer_dispatcher = {"glorot": tf.initializers.glorot_uniform,
                               "random": tf.random_normal_initializer}
