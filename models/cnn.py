@@ -20,7 +20,8 @@ class CNN:
                               [5, 5, 16, 16],
                               [3, 3, 16, 32],
                               [3, 3, 32, 32]]
-        self.dense_shapes = [[1152, 1]]
+        self.dense_shapes = [[7200, 1028],
+                             [1028, 1]]
         self.pool_shapes = [5, 5, 3, 3]
         self.cnn_strides = [3, 1, 1, 1]
         self.pool_strides = [1, 1, 1, 1]
@@ -149,7 +150,7 @@ class CNN:
             x = tf.nn.conv2d(input=x,
                              filters=self.weights[i],
                              strides=self.cnn_strides[i],
-                             padding='VALID')
+                             padding='SAME')
             x = tf.nn.leaky_relu(features=x, alpha=self.alpha)
             x = tf.nn.max_pool2d(input=x,
                                  ksize=self.pool_shapes[i],
@@ -172,7 +173,6 @@ class CNN:
             x = tf.nn.dropout(x, self.dropout_rate)
 
         x = tf.nn.leaky_relu(x, alpha=self.alpha)
-        tf.print(x)
 
         return x
 
