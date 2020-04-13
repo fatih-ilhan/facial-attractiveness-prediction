@@ -20,7 +20,8 @@ def train(train_ds, val_ds, exp_count, **params):
     early_stop_tolerance = params["early_stop_tolerance"]
 
     optimizer_dispatcher = {"adam": tf.optimizers.Adam,
-                            "sgd": tf.optimizers.SGD}
+                            "sgd": tf.optimizers.SGD,
+                            "rmsprop": tf.optimizers.RMSprop}
     initializer_dispatcher = {"xavier": tf.initializers.glorot_uniform,
                               "random": tf.random_normal_initializer}
     loss_dispatcher = {"l2": loss_l2, "l1": loss_l1}
@@ -53,7 +54,7 @@ def train(train_ds, val_ds, exp_count, **params):
 
 def loss_l2(y_true, y_pred, lmd=0, weights=None):
     loss = tf.reduce_mean(tf.square(y_true - y_pred))
-    if weights is not None:
+    if weights is not None and lmd > 0:
         # Calculate regularization term by finding norm of weights
         reg_term = 0
         for w in weights:
@@ -64,7 +65,7 @@ def loss_l2(y_true, y_pred, lmd=0, weights=None):
 
 def loss_l1(y_true, y_pred, lmd=0, weights=None):
     loss = tf.reduce_mean(tf.abs(y_true - y_pred))
-    if weights is not None:
+    if weights is not None and lmd > 0:
         # Calculate regularization term by finding norm of weights
         reg_term = 0
         for w in weights:

@@ -20,8 +20,8 @@ class CNN:
                               [5, 5, 16, 16],
                               [3, 3, 16, 32],
                               [3, 3, 32, 32]]
-        self.dense_shapes = [[7200, 1028],
-                             [1028, 1]]
+        self.dense_shapes = [[1152, 128],
+                             [128, 1]]
         self.pool_shapes = [5, 5, 3, 3]
         self.cnn_strides = [3, 1, 1, 1]
         self.pool_strides = [1, 1, 1, 1]
@@ -86,7 +86,7 @@ class CNN:
             else:
                 tolerance += 1
 
-            if tolerance > early_stop_tolerance:
+            if tolerance > early_stop_tolerance or epoch == num_epochs - 1:
                 self.__dict__ = best_dict
                 evaluation_val_loss = self.step_loop(val_ds, self.eval_step, self.loss_fun_evaluation)
                 message_str = "Early exiting from epoch: {}, Rounded MAE for validation set: {:.3f}."
@@ -150,7 +150,7 @@ class CNN:
             x = tf.nn.conv2d(input=x,
                              filters=self.weights[i],
                              strides=self.cnn_strides[i],
-                             padding='SAME')
+                             padding='VALID')
             x = tf.nn.leaky_relu(features=x, alpha=self.alpha)
             x = tf.nn.max_pool2d(input=x,
                                  ksize=self.pool_shapes[i],

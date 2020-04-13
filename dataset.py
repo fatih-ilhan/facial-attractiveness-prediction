@@ -98,4 +98,4 @@ if __name__ == '__main__':
     images_ds = dataset_obj.train_ds
 
     for img, scr in images_ds:
-        print(img.shape, scr.shape)
+        print(scr)

@@ -17,7 +17,7 @@ def select_best_model(results_dir):
     best_conf = {}
     best_loss = 1e6
     for exp in experiments:
-        if not "experiment" in exp:
+        if "experiment" not in exp:
             continue
         exp_path = os.path.join(results_dir, exp)
         conf_path = os.path.join(exp_path, 'config.pkl')

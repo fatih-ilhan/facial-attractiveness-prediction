@@ -3,15 +3,15 @@ from random import shuffle
 
 model_params_pool = {
     "cnn": {
-        "batch_size": [8],
+        "batch_size": [32],
         "transform_flags": [[0, 0, 0, 0]],
-        "learning_rate": [0.00003],
+        "learning_rate": [0.001],
         "num_epochs": [50],
         "optimizer_type": ["adam"],
         "initializer_type": ["xavier"],
         "loss_type": ['l1'],
         "alpha": [0.01],
-        "batch_reg": [False],
+        "batch_reg": [True],
         "lambda": [0],
         "dropout_rate": [0],
         "early_stop_tolerance": [50]
