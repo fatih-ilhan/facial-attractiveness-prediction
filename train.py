@@ -20,7 +20,7 @@ def train(train_ds, val_ds, exp_count, **params):
     early_stop_tolerance = params["early_stop_tolerance"]
 
     optimizer_dispatcher = {"adam": tf.optimizers.Adam}
-    initializer_dispatcher = {"glorot": tf.initializers.glorot_uniform,
+    initializer_dispatcher = {"xavier": tf.initializers.glorot_uniform,
                               "random": tf.random_normal_initializer}
     loss_dispatcher = {"l2": loss_l2, "l1": loss_l1}
 
@@ -33,14 +33,15 @@ def train(train_ds, val_ds, exp_count, **params):
                 loss_function=loss_fun,
                 **params)
 
-    train_loss, eval_loss = model.fit(train_ds, val_ds, num_epochs, early_stop_tolerance)
+    train_loss, val_loss, evaluation_val_loss = model.fit(train_ds, val_ds, num_epochs, early_stop_tolerance)
 
     # plot and save the loss curve
-    plot_loss_curve(train_loss, eval_loss, loss_type, save_dir)
+    plot_loss_curve(train_loss, val_loss, loss_type, save_dir)
 
     save_dict = params
     save_dict['train_loss'] = train_loss
-    save_dict['eval_loss'] = eval_loss
+    save_dict['val_loss'] = val_loss
+    save_dict['evaluation_val_loss'] = evaluation_val_loss
     print('Saving...')
     conf_save_path = os.path.join(save_dir, 'config.pkl')
     model_save_path = os.path.join(save_dir, 'model.pkl')
@@ -49,8 +50,14 @@ def train(train_ds, val_ds, exp_count, **params):
             pkl.dump(obj, file)
 
 
-def loss_l2(y_true, y_pred, weights=None):
+def loss_l2(y_true, y_pred, lmd=0, weights=None):
     loss = tf.reduce_mean(tf.square(y_true - y_pred))
+    if weights is not None:
+        # Calculate regularization term by finding norm of weights
+        reg_term = 0
+        for w in weights:
+            reg_term += tf.nn.l2_loss(w)
+        loss += reg_term * lmd
     return loss
 
 
@@ -73,5 +80,6 @@ def plot_loss_curve(train_loss, eval_loss, loss_type, save_dir):
     plt.title('Learning Curve')
     plt.xlabel('num_epoch')
     plt.ylabel('{} loss'.format(loss_type))
+    plt.legend(['train', 'validation'])
     plt.grid(True)
     plt.savefig(save_path, dpi=400)

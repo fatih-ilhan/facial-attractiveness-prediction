@@ -15,15 +15,17 @@ def select_best_model(results_dir):
 
     best_model = None
     best_conf = {}
-    best_loss = 99
+    best_loss = 1e6
     for exp in experiments:
+        if not "experiment" in exp:
+            continue
         exp_path = os.path.join(results_dir, exp)
         conf_path = os.path.join(exp_path, 'config.pkl')
         model_path = os.path.join(exp_path, 'model.pkl')
 
         with open(conf_path, 'rb') as f:
             config = pkl.load(f)
-        eval_loss = config['eval_loss'][-1]
+        eval_loss = config['evaluation_val_loss']
         if eval_loss < best_loss:
             best_loss = eval_loss
             with open(model_path, 'rb') as f:
@@ -44,20 +46,21 @@ def main(device, slot):
     for exp_count, conf in enumerate(config_obj.conf_list):
         print('\nExperiment {}'.format(exp_count))
         print('-*-' * 10)
-        with tf.device('/' + device + ':' + str(slot)):
-            datasets = ImageDataset(data_dir=data_folder,
-                                    batch_size=conf["batch_size"],
-                                    transform_flags=conf['transform_flags'])
 
+        datasets = ImageDataset(data_dir=data_folder,
+                                batch_size=conf["batch_size"],
+                                transform_flags=conf['transform_flags'])
+
+        with tf.device('/' + device + ':' + str(slot)):
             train(datasets.train_ds, datasets.val_ds, exp_count, **conf)
 
     best_model, best_conf = select_best_model(results_folder)
 
-    with tf.device('/' + device + ':' + str(slot)):
-        datasets = ImageDataset(data_dir=data_folder,
-                                batch_size=best_conf["batch_size"],
-                                transform_flags=best_conf['transform_flags'])
+    datasets = ImageDataset(data_dir=data_folder,
+                            batch_size=best_conf["batch_size"],
+                            transform_flags=best_conf['transform_flags'])
 
+    with tf.device('/' + device + ':' + str(slot)):
         print("Testing with best model...")
         test(best_model, datasets.test_ds)
 

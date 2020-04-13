@@ -6,7 +6,6 @@ import tensorflow as tf
 
 class CNN:
     def __init__(self, **params):
-        # finetune params
         self.initializer = params['initializer']
         self.optim = params['optimizer']
         self.loss_fun = params['loss_function']
@@ -21,8 +20,7 @@ class CNN:
                               [5, 5, 16, 16],
                               [3, 3, 16, 32],
                               [3, 3, 32, 32]]
-        self.dense_shapes = [[1152, 256],
-                             [256, 1]]
+        self.dense_shapes = [[1152, 1]]
         self.pool_shapes = [5, 5, 3, 3]
         self.cnn_strides = [3, 1, 1, 1]
         self.pool_strides = [1, 1, 1, 1]
@@ -50,69 +48,77 @@ class CNN:
             self.weights += beta_list
             self.weights += gamma_list
 
-    def fit(self, train_ds, eval_ds, num_epochs, early_stop_tolerance):
+    def fit(self, train_ds, val_ds, num_epochs, early_stop_tolerance):
         """
         :param train_ds: :obj:tf.Dataset
-        :param eval_ds: :obj:tf.Dataset
+        :param val_ds: :obj:tf.Dataset
         :param num_epochs: int
         :return: train_loss, eval_loss
         """
         print('Training starts...')
         train_loss = []
-        eval_loss = []
+        val_loss = []
 
         tolerance = 0
-        best_eval_loss = 1e6
+        best_epoch = 0
+        best_val_loss = 1e6
+        evaluation_val_loss = best_val_loss
         best_dict = self.__dict__
 
         for epoch in range(num_epochs):
-            # train loop
+            # train and validation loop
             start_time = time.time()
-
-            running_train_loss = 0
-            for count, (image, score) in enumerate(train_ds):
-                loss = self.train_step(image, score)
-                running_train_loss += loss.numpy()
-            running_train_loss /= count
-
-            # eval loop
-            running_eval_loss = 0
-            for count, (image, score) in enumerate(eval_ds):
-                loss = self.eval_step(image, score)
-                running_eval_loss += loss.numpy()
-            running_eval_loss /= count
-
+            running_train_loss = self.step_loop(train_ds, self.train_step, self.loss_fun)
+            running_val_loss = self.step_loop(val_ds, self.eval_step, self.loss_fun)
             epoch_time = time.time() - start_time
 
-            message_str = "Epoch: {}, Train_loss: {:.2f}, Eval_loss: {:.2f}, Took {:.2f} seconds."
-            print(message_str.format(epoch, running_train_loss, running_eval_loss, epoch_time))
+            message_str = "Epoch: {}, Train_loss: {:.3f}, Validation_loss: {:.3f}, Took {:.3f} seconds."
+            print(message_str.format(epoch + 1, running_train_loss, running_val_loss, epoch_time))
             # save the losses
             train_loss.append(running_train_loss)
-            eval_loss.append(running_eval_loss)
+            val_loss.append(running_val_loss)
 
-            if running_eval_loss < best_eval_loss:
-                best_eval_loss = running_eval_loss
+            if running_val_loss < best_val_loss:
+                best_epoch = epoch + 1
+                best_val_loss = running_val_loss
                 best_dict = deepcopy(self.__dict__)  # brutal
             else:
                 tolerance += 1
 
             if tolerance > early_stop_tolerance:
                 self.__dict__ = best_dict
+                evaluation_val_loss = self.step_loop(val_ds, self.eval_step, self.loss_fun_evaluation)
+                message_str = "Early exiting from epoch: {}, Rounded MAE for validation set: {:.3f}."
+                print(message_str.format(best_epoch, evaluation_val_loss))
                 break
 
         print('Training finished')
-        return train_loss, eval_loss
+        return train_loss, val_loss, evaluation_val_loss
+
+    @staticmethod
+    def step_loop(dataset, step_fun, loss_fun):
+        count = 0
+        running_loss = 0.0
+
+        for count, (image, score) in enumerate(dataset):
+            loss = step_fun(image, score, loss_fun)
+            running_loss += loss.numpy()
+
+        running_loss /= (count + 1)
+
+        return running_loss
 
     @tf.function
-    def train_step(self, images, scores):
+    def train_step(self, images, scores, loss_fun):
         """
         :param images: (n, h, w, c)
         :param scores: (n,)
+        :param loss_fun: loss function
         :return loss
         """
         with tf.GradientTape() as tape:
             predictions = self.forward(images)
-            loss = self.loss_fun(scores, predictions, self.lmd, self.weights)
+            loss = loss_fun(scores, predictions, self.lmd, self.weights)
 
         grads = tape.gradient(loss, self.weights)
         self.optim.apply_gradients(zip(grads, self.weights))
@@ -120,13 +126,15 @@ class CNN:
         return loss
 
     @tf.function
-    def eval_step(self, images, scores):
+    def eval_step(self, images, scores, loss_fun):
         """
         :param images: (n, h, w, c)
+        :param scores: (n,)
+        :param loss_fun: loss function
         :return: loss
         """
         predictions = self.forward(images)
-        loss = self.loss_fun(scores, predictions)
+        loss = loss_fun(scores, predictions)
 
         return loss
 
@@ -148,8 +156,7 @@ class CNN:
                                  strides=self.pool_strides[i],
                                  padding='VALID')
 
-            if self.dropout_rate > 0:
-                x = tf.nn.dropout(x, self.dropout_rate)
+            x = tf.nn.dropout(x, self.dropout_rate)
 
             if self.batch_reg:
                 mean, var = tf.nn.moments(x, [0, 1, 2])
@@ -158,12 +165,14 @@ class CNN:
                                               self.weights[2*num_conv_layers+num_dense_layers+i],
                                               self.epsilon)
 
-        x = tf.reshape(x, shape=(n, -1))
+        x = tf.reshape(x, shape=(tf.shape(x)[0], -1))
 
         for i in range(len(self.dense_shapes)):
-            x = tf.matmul(x, self.weights[num_conv_layers+i]),
+            x = tf.matmul(x, self.weights[num_conv_layers+i])
+            x = tf.nn.dropout(x, self.dropout_rate)
 
         x = tf.nn.leaky_relu(x, alpha=self.alpha)
+        tf.print(x)
 
         return x
 
@@ -176,5 +185,18 @@ class CNN:
                                  dtype=tf.float32)
             weights.append(weight)
         return weights
+
+    @staticmethod
+    def loss_fun_evaluation(labels, preds):
+        """
+        :param labels:
+        :param preds:
+        :return:
+        """
+        labels = tf.cast(labels, tf.int32)
+        rounded_preds = tf.cast(preds, tf.int32)
+        rounded_preds = tf.clip_by_value(rounded_preds, 1, 8)
+        loss = tf.reduce_mean(tf.abs(labels - rounded_preds))
+        return loss
 
 

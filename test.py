@@ -2,18 +2,10 @@ import os
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from train import loss_l1
-
 
 def test(model, test_ds):
-    model.loss_fun = loss_l1
-    running_eval_loss = 0
-    for count, (image, score) in enumerate(test_ds):
-        loss = model.eval_step(image, score)
-        running_eval_loss += loss.numpy()
-    running_eval_loss /= count
-
-    print("Test l1 loss: {:.2f}".format(running_eval_loss))
+    test_loss = model.step_loop(test_ds, model.eval_step, model.loss_fun_evaluation)
+    print("Test Rounded MAE loss: {:.3f}".format(test_loss))
 
 
 def test_sample(model, data_dir):
