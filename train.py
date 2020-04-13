@@ -19,7 +19,8 @@ def train(train_ds, val_ds, exp_count, **params):
     loss_type = params["loss_type"]
     early_stop_tolerance = params["early_stop_tolerance"]
 
-    optimizer_dispatcher = {"adam": tf.optimizers.Adam}
+    optimizer_dispatcher = {"adam": tf.optimizers.Adam,
+                            "sgd": tf.optimizers.SGD}
     initializer_dispatcher = {"xavier": tf.initializers.glorot_uniform,
                               "random": tf.random_normal_initializer}
     loss_dispatcher = {"l2": loss_l2, "l1": loss_l1}
