@@ -35,7 +35,7 @@ def select_best_model(results_dir):
     return best_model, best_conf
 
 
-def main(device, slot):
+def main(device, slot, overwrite_flag):
     model_name = 'cnn'
     data_folder = 'data'
     results_folder = 'results'
@@ -52,7 +52,7 @@ def main(device, slot):
                                 transform_flags=conf['transform_flags'])
 
         with tf.device('/' + device + ':' + str(slot)):
-            train(datasets.train_ds, datasets.val_ds, exp_count, **conf)
+            train(datasets.train_ds, datasets.val_ds, exp_count, overwrite_flag, **conf)
 
     best_model, best_conf = select_best_model(results_folder)
 
@@ -70,7 +70,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--device', type=str, default="CPU")  # device CPU/GPU
     parser.add_argument('--slot', type=int, default=0)  # device slot
+    parser.add_argument('--overwrite', type=int, default=0)  # overwrite previous results
 
     args = parser.parse_args()
 
-    main(args.device, args.slot)
+    main(args.device, args.slot, args.overwrite)

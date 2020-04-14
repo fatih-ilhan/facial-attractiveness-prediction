@@ -5,8 +5,15 @@ import matplotlib.pyplot as plt
 from models.cnn import CNN
 
 
-def train(train_ds, val_ds, exp_count, **params):
-    save_dir = 'experiment_' + str(exp_count)
+def train(train_ds, val_ds, exp_count, overwrite_flag, **params):
+
+    if overwrite_flag:
+        tag = exp_count
+    else:
+        tag_list = [int(path.split("_")[-1]) for path in os.listdir("results") if "exp" in path]
+        tag = max(tag_list) + 1
+
+    save_dir = 'experiment_' + str(tag)
     save_dir = os.path.join('results', save_dir)
 
     if not os.path.isdir(save_dir):

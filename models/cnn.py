@@ -22,10 +22,10 @@ class CNN:
                               [5, 5, 16, 16],
                               [3, 3, 16, 32],
                               [3, 3, 32, 32]]
-        self.dense_shapes = [[4608, 256],
+        self.dense_shapes = [[2592, 256],
                              [256, 1]]
         self.pool_shapes = [1, 5, 1, 3]
-        self.cnn_strides = [3, 1, 1, 1]
+        self.cnn_strides = [3, 1, 3, 1]
         self.pool_strides = [1, 1, 1, 1]
         self.weight_shapes = self.filter_shapes + self.dense_shapes
 
@@ -137,12 +137,12 @@ class CNN:
             x = tf.nn.conv2d(input=x,
                              filters=self.weights[i],
                              strides=self.cnn_strides[i],
-                             padding='VALID')
+                             padding='SAME')
             x = tf.nn.leaky_relu(features=x, alpha=self.alpha)
             x = tf.nn.max_pool2d(input=x,
                                  ksize=self.pool_shapes[i],
                                  strides=self.pool_strides[i],
-                                 padding='VALID')
+                                 padding='SAME')
 
             if self.batch_reg:
                 batch_norm = self.batch_norm_list[i]
@@ -154,12 +154,12 @@ class CNN:
             x = tf.nn.dropout(x, self.dropout_rate)
 
         x = tf.matmul(x, self.weights[num_conv_layers])
-        x = tf.nn.relu(x)
+        x = tf.nn.leaky_relu(features=x, alpha=self.alpha)
         if mode == 'train':
             x = tf.nn.dropout(x, self.dropout_rate)
 
         x = tf.matmul(x, self.weights[num_conv_layers+1])
-        x = tf.nn.relu(x)
+        x = tf.nn.leaky_relu(features=x, alpha=self.alpha)
 
         return x
 
@@ -185,5 +185,3 @@ class CNN:
         rounded_preds = tf.clip_by_value(rounded_preds, 1, 8)
         loss = tf.reduce_mean(tf.abs(labels - rounded_preds))
         return loss
-
-
