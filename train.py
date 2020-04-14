@@ -53,13 +53,15 @@ def train(train_ds, val_ds, exp_count, **params):
 
 
 def loss_l2(y_true, y_pred, lmd=0, weights=None):
-    loss = tf.reduce_mean(tf.square(y_true - y_pred))
-    if weights is not None and lmd > 0:
-        # Calculate regularization term by finding norm of weights
-        reg_term = 0
-        for w in weights:
-            reg_term += tf.nn.l2_loss(w)
-        loss += reg_term * lmd
+
+    mse = tf.keras.losses.MeanSquaredError()
+    loss = mse(y_true, y_pred)
+    # if weights is not None and lmd > 0:
+    #     # Calculate regularization term by finding norm of weights
+    #     reg_term = 0
+    #     for w in weights:
+    #         reg_term += tf.nn.l2_loss(w)
+    #     loss += reg_term * lmd
     return loss
 
 

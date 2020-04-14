@@ -3,6 +3,8 @@ from copy import deepcopy
 
 import tensorflow as tf
 
+from models.batch_norm import ConvBatchNorm
+
 
 class CNN:
     def __init__(self, **params):
@@ -19,12 +21,13 @@ class CNN:
         self.filter_shapes = [[5, 5, 3, 16],
                               [5, 5, 16, 16],
                               [3, 3, 16, 32],
-                              [3, 3, 32, 32]]
-        self.dense_shapes = [[1152, 128],
+                              [3, 3, 32, 64],
+                              [3, 3, 64, 128]]
+        self.dense_shapes = [[512, 128],
                              [128, 1]]
-        self.pool_shapes = [5, 5, 3, 3]
-        self.cnn_strides = [3, 1, 1, 1]
-        self.pool_strides = [1, 1, 1, 1]
+        self.pool_shapes = [5, 5, 3, 3, 3]
+        self.cnn_strides = [3, 1, 1, 1, 1]
+        self.pool_strides = [1, 1, 1, 1, 1]
         self.weight_shapes = self.filter_shapes + self.dense_shapes
 
         # arrange batch-norm params
@@ -32,22 +35,10 @@ class CNN:
         self.weights = self.init_weights(self.weight_shapes, 'weight')
 
         if self.batch_reg:
-            beta_list = []
-            gamma_list = []
-            for i in range(len(self.filter_shapes)):
-                beta = tf.constant(0.0, shape=[self.filter_shapes[i][-1]])
-                beta_list.append(tf.Variable(initial_value=beta,
-                                 name='{}_{}'.format('beta', i),
-                                 trainable=True,
-                                 dtype=tf.float32))
-                gamma = tf.constant(1.0, shape=[self.filter_shapes[i][-1]])
-                gamma_list.append(tf.Variable(initial_value=gamma,
-                                  name='{}_{}'.format('gamma', i),
-                                  trainable=True,
-                                  dtype=tf.float32))
-            self.epsilon = 0.0001
-            self.weights += beta_list
-            self.weights += gamma_list
+            self.batch_norm_list = []
+            for filter_shapes in self.filter_shapes:
+                batch_norm = ConvBatchNorm(depth=filter_shapes[-1], epsilon=0.00001)
+                self.batch_norm_list.append(batch_norm)
 
     def fit(self, train_ds, val_ds, num_epochs, early_stop_tolerance):
         """
@@ -118,7 +109,7 @@ class CNN:
         :return loss
         """
         with tf.GradientTape() as tape:
-            predictions = self.forward(images)
+            predictions = self.forward(images, mode='train')
             loss = loss_fun(scores, predictions, self.lmd, self.weights)
 
         grads = tape.gradient(loss, self.weights)
@@ -134,18 +125,15 @@ class CNN:
         :param loss_fun: loss function
         :return: loss
         """
-        predictions = self.forward(images)
+        predictions = self.forward(images, mode='test')
         loss = loss_fun(scores, predictions)
 
         return loss
 
-    def forward(self, x):
-        n, h, w, c = x.shape
+    def forward(self, x, mode='train'):
         x = tf.cast(x, dtype=tf.float32)
 
         num_conv_layers = len(self.filter_shapes)
-        num_dense_layers = len(self.dense_shapes)
-
         for i in range(num_conv_layers):
             x = tf.nn.conv2d(input=x,
                              filters=self.weights[i],
@@ -157,22 +145,22 @@ class CNN:
                                  strides=self.pool_strides[i],
                                  padding='VALID')
 
-            x = tf.nn.dropout(x, self.dropout_rate)
-
             if self.batch_reg:
-                mean, var = tf.nn.moments(x, [0, 1, 2])
-                x = tf.nn.batch_normalization(x, mean, var,
-                                              self.weights[num_conv_layers+num_dense_layers+i],
-                                              self.weights[2*num_conv_layers+num_dense_layers+i],
-                                              self.epsilon)
+                batch_norm = self.batch_norm_list[i]
+                x = batch_norm.normalize(x, mode=mode)
+                batch_norm.update_trainer()
 
         x = tf.reshape(x, shape=(tf.shape(x)[0], -1))
-
-        for i in range(len(self.dense_shapes)):
-            x = tf.matmul(x, self.weights[num_conv_layers+i])
+        if mode == 'train':
             x = tf.nn.dropout(x, self.dropout_rate)
 
-        x = tf.nn.leaky_relu(x, alpha=self.alpha)
+        x = tf.matmul(x, self.weights[num_conv_layers])
+        x = tf.nn.relu(x)
+        if mode == 'train':
+            x = tf.nn.dropout(x, self.dropout_rate)
+
+        x = tf.matmul(x, self.weights[num_conv_layers+1])
+        x = tf.nn.relu(x)
 
         return x
 

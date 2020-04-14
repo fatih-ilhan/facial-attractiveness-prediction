@@ -9,9 +9,9 @@ model_params_pool = {
         "num_epochs": [50],
         "optimizer_type": ["adam"],
         "initializer_type": ["xavier"],
-        "loss_type": ['l1'],
+        "loss_type": ['l2'],
         "alpha": [0.01],
-        "batch_reg": [True],
+        "batch_reg": [False],
         "lambda": [0],
         "dropout_rate": [0],
         "early_stop_tolerance": [50]
