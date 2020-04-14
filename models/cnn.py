@@ -21,13 +21,12 @@ class CNN:
         self.filter_shapes = [[5, 5, 3, 16],
                               [5, 5, 16, 16],
                               [3, 3, 16, 32],
-                              [3, 3, 32, 64],
-                              [3, 3, 64, 128]]
-        self.dense_shapes = [[512, 128],
-                             [128, 1]]
-        self.pool_shapes = [5, 5, 3, 3, 3]
-        self.cnn_strides = [3, 1, 1, 1, 1]
-        self.pool_strides = [1, 1, 1, 1, 1]
+                              [3, 3, 32, 32]]
+        self.dense_shapes = [[4608, 256],
+                             [256, 1]]
+        self.pool_shapes = [1, 5, 1, 3]
+        self.cnn_strides = [3, 1, 1, 1]
+        self.pool_strides = [1, 1, 1, 1]
         self.weight_shapes = self.filter_shapes + self.dense_shapes
 
         # arrange batch-norm params
@@ -181,8 +180,8 @@ class CNN:
         :param preds:
         :return:
         """
-        labels = tf.cast(labels, tf.int32)
-        rounded_preds = tf.cast(preds, tf.int32)
+        labels = tf.cast(tf.squeeze(labels), tf.int32)
+        rounded_preds = tf.cast(tf.squeeze(preds), tf.int32)
         rounded_preds = tf.clip_by_value(rounded_preds, 1, 8)
         loss = tf.reduce_mean(tf.abs(labels - rounded_preds))
         return loss
