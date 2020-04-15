@@ -11,7 +11,10 @@ def train(train_ds, val_ds, exp_count, overwrite_flag, **params):
         tag = exp_count
     else:
         tag_list = [int(path.split("_")[-1]) for path in os.listdir("results") if "exp" in path]
-        tag = max(tag_list) + 1
+        if tag_list:
+            tag = max(tag_list) + 1
+        else:
+            tag = 0
 
     save_dir = 'experiment_' + str(tag)
     save_dir = os.path.join('results', save_dir)
@@ -92,3 +95,4 @@ def plot_loss_curve(train_loss, eval_loss, loss_type, save_dir):
     plt.legend(['train', 'validation'])
     plt.grid(True)
     plt.savefig(save_path, dpi=400)
+    plt.close()

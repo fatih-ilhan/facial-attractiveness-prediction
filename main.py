@@ -6,7 +6,7 @@ import tensorflow as tf
 from config import Config
 from dataset import ImageDataset
 from train import train
-from test import test
+from predict import test
 
 
 def select_best_model(results_dir):

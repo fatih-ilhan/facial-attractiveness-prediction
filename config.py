@@ -3,18 +3,18 @@ from random import shuffle
 
 model_params_pool = {
     "cnn": {
-        "batch_size": [16],
+        "batch_size": [4, 8, 16, 32, 64],
         "transform_flags": [[0, 0, 0, 0]],
-        "learning_rate": [0.002],
-        "num_epochs": [500],
+        "learning_rate": [1e-4, 3e-4, 1e-3, 3e-3],
+        "num_epochs": [300],
         "optimizer_type": ["adam"],
-        "initializer_type": ["xavier"],
-        "loss_type": ['l2'],
+        "initializer_type": ["xavier", "random"],
+        "loss_type": ["l2"],
         "alpha": [0.01],
         "batch_reg": [True],
-        "lambda": [0],
-        "dropout_rate": [0],
-        "early_stop_tolerance": [500]
+        "lambda": [1e-4, 1e-3],
+        "dropout_rate": [0, 0.1, 0.2],
+        "early_stop_tolerance": [5]
     }
 }
 

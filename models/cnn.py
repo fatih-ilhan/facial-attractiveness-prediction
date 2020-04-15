@@ -18,23 +18,22 @@ class CNN:
         self.dropout_rate = params['dropout_rate']
 
         # set filter, pool and dense shapes
-        self.filter_shapes = [[5, 5, 3, 16],
-                              [5, 5, 16, 16],
-                              [3, 3, 16, 32],
-                              [3, 3, 32, 32]]
-        self.dense_shapes = [[2592, 256],
-                             [256, 1]]
+        self.filter_shapes = [[5, 5, 3, 8],
+                              [5, 5, 8, 16],
+                              [3, 3, 16, 16],
+                              [3, 3, 16, 16]]
+        self.dense_shapes = [[784, 64],
+                             [64, 1]]
         self.pool_shapes = [1, 5, 1, 3]
-        self.cnn_strides = [3, 1, 3, 1]
-        self.pool_strides = [1, 1, 1, 1]
+        self.cnn_strides = [3, 1, 1, 1]
+        self.pool_strides = [1, 2, 1, 2]
         self.weight_shapes = self.filter_shapes + self.dense_shapes
 
         # arrange batch-norm params
         # initialize weights according to initializer
         self.weights = self.init_weights(self.weight_shapes, 'weight')
-
+        self.batch_norm_list = []
         if self.batch_reg:
-            self.batch_norm_list = []
             for filter_shapes in self.filter_shapes:
                 batch_norm = ConvBatchNorm(depth=filter_shapes[-1], epsilon=0.00001)
                 self.batch_norm_list.append(batch_norm)
@@ -73,6 +72,7 @@ class CNN:
                 best_epoch = epoch + 1
                 best_val_loss = running_val_loss
                 best_dict = deepcopy(self.__dict__)  # brutal
+                tolerance = 0
             else:
                 tolerance += 1
 
@@ -111,9 +111,13 @@ class CNN:
             predictions = self.forward(images, mode='train')
             loss = loss_fun(scores, predictions, self.lmd, self.weights)
 
-        grads = tape.gradient(loss, self.weights)
-        self.optim.apply_gradients(zip(grads, self.weights))
-
+        grads = tape.gradient(loss, self.weights +
+                              [b.beta for b in self.batch_norm_list] +
+                              [b.gamma for b in self.batch_norm_list])
+        self.optim.apply_gradients(zip(grads,
+                                       self.weights +
+                                       [b.beta for b in self.batch_norm_list] +
+                                       [b.gamma for b in self.batch_norm_list]))
         return loss
 
     @tf.function
@@ -133,6 +137,8 @@ class CNN:
         x = tf.cast(x, dtype=tf.float32)
 
         num_conv_layers = len(self.filter_shapes)
+        num_dense_layers = len(self.dense_shapes)
+
         for i in range(num_conv_layers):
             x = tf.nn.conv2d(input=x,
                              filters=self.weights[i],
@@ -150,16 +156,17 @@ class CNN:
                 batch_norm.update_trainer()
 
         x = tf.reshape(x, shape=(tf.shape(x)[0], -1))
-        if mode == 'train':
-            x = tf.nn.dropout(x, self.dropout_rate)
 
-        x = tf.matmul(x, self.weights[num_conv_layers])
-        x = tf.nn.leaky_relu(features=x, alpha=self.alpha)
-        if mode == 'train':
-            x = tf.nn.dropout(x, self.dropout_rate)
+        for j in range(num_dense_layers):
+            if mode == 'train':
+                x = tf.nn.dropout(x, self.dropout_rate)
 
-        x = tf.matmul(x, self.weights[num_conv_layers+1])
-        x = tf.nn.leaky_relu(features=x, alpha=self.alpha)
+            x = tf.matmul(x, self.weights[num_conv_layers+j])
+
+            if j == num_dense_layers - 1:
+                x = tf.nn.relu(x)
+            else:
+                x = tf.nn.leaky_relu(features=x, alpha=self.alpha)
 
         return x
 
