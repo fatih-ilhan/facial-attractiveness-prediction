@@ -1,6 +1,4 @@
 import os
-import pickle
-import argparse
 
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -11,7 +9,6 @@ def test(model, test_ds):
     print("Test Rounded MAE loss: {:.3f}".format(test_loss))
 
 
-# TODO: kanka bu çalışmadı bende
 def test_sample(model, data_dir, device, slot):
 
     sample_img_path = os.path.join(data_dir, 'sample')
@@ -20,6 +17,7 @@ def test_sample(model, data_dir, device, slot):
     for img_name in sample_imgs:
         if ".gitkeep" in img_name:
             continue
+        label = img_name[0]
 
         img_path = os.path.join(sample_img_path, img_name)
 
@@ -31,29 +29,14 @@ def test_sample(model, data_dir, device, slot):
             # add batch dimension
             image = tf.expand_dims(image, 0)
             # predict the score
-            pred = model.forward(image)
+            pred = model.forward(image).numpy()
 
-        pred = pred.numpy()
+        show(image, pred, label)
+    plt.show()
 
-        show(image, pred)
 
-
-def show(image, score):
+def show(image, pred, label):
     plt.figure()
-    plt.imshow(image)
-    plt.title(score.numpy().decode('utf-8'))
+    plt.imshow(tf.squeeze(image))
+    plt.title("Label:{}, Pred:{}".format(label, round(pred.item())), fontsize=18)
     plt.axis('off')
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--device', type=str, default="CPU")  # device CPU/GPU
-    parser.add_argument('--slot', type=int, default=0)  # device slot
-    parser.add_argument('--model_id', type=int, default=0)  # overwrite previous results
-
-    args = parser.parse_args()
-
-    model_path = os.path.join("results", f"experiment_{args.model_id}", "model.pkl")
-    model = pickle.load(open(model_path, "rb"))
-    test_sample(model, "data", args.device, args. slot)

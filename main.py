@@ -6,7 +6,7 @@ import tensorflow as tf
 from config import Config
 from dataset import ImageDataset
 from train import train
-from predict import test
+from predict import test, test_sample
 
 
 def select_best_model(results_dir):
@@ -42,6 +42,7 @@ def main(device, slot, overwrite_flag):
 
     config_obj = Config(model_name)
 
+    # train
     print("Starting experiments")
     for exp_count, conf in enumerate(config_obj.conf_list):
         print('\nExperiment {}'.format(exp_count))
@@ -60,9 +61,15 @@ def main(device, slot, overwrite_flag):
                             batch_size=best_conf["batch_size"],
                             transform_flags=best_conf['transform_flags'])
 
+    # test
     with tf.device('/' + device + ':' + str(slot)):
         print("Testing with best model...")
         test(best_model, datasets.test_ds)
+
+    # sample
+    with tf.device('/' + device + ':' + str(slot)):
+        print("Predicting Samples")
+        test_sample(best_model, data_folder, device, slot)
 
 
 if __name__ == '__main__':
