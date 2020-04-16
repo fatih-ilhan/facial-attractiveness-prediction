@@ -1,5 +1,15 @@
 # facial-attractiveness-prediction
 
+# Installing
+
+## Conda Run
+After creating and activating your virtual environment install requirements
+
+``
+$ pip install -r requirements.txt
+``
+
+
 ## Docker Run
 
 *Build docker image* 
@@ -24,3 +34,35 @@ Run docker container
 Then inside container run `main.py`
 
 ``/workspace# python main.py``
+
+
+# Running
+
+Put the data files under `data` directory following this structure
+
+```
+.
++-- data
+|   +-- test
+|   +-- train
+|   +-- validation
+```
+
+Further you can put sample images under `data/sample` folder
+
+
+To run the code it is enough to write 
+
+```
+$ python main.py
+```
+
+you can specify arguments
+
+```
+$ python main.py --device GPU --slot 0 --overwrite 1
+```
+
+where overwrite used to overwrite previous results.
+
+After that experiment outputs will be written under `results` folder.
