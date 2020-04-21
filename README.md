@@ -1,5 +1,9 @@
 # facial-attractiveness-prediction
 
+Fatih İlhan - 21401801
+
+Selim Furkan Tekin - 21501391
+
 # Installing
 
 ## Conda Run
@@ -65,4 +69,6 @@ $ python main.py --device GPU --slot 0 --overwrite 1
 
 where overwrite used to overwrite previous results.
 
-After that experiment outputs will be written under `results` folder.
+Modify `config.py` to change experiment configuration.
+
+Experiment outputs will be written under `results` folder.
