@@ -1,9 +1,5 @@
 # facial-attractiveness-prediction
 
-Fatih İlhan - 21401801
-
-Selim Furkan Tekin - 21501391
-
 # Installing
 
 ## Conda Run
